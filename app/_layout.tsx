@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -29,6 +30,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) throw error;
   }, [error]);
+
+  const initialize = useAuthStore((s) => s.initialize);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   useEffect(() => {
     if (loaded) {

@@ -10,9 +10,10 @@ import type { Place } from '@/types';
 interface Props {
   place: Place | null;
   onClose: () => void;
+  onNavigate?: (place: Place) => void;
 }
 
-export default function PlaceBottomSheet({ place, onClose }: Props) {
+export default function PlaceBottomSheet({ place, onClose, onNavigate }: Props) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -137,6 +138,7 @@ export default function PlaceBottomSheet({ place, onClose }: Props) {
         )}
 
         <Pressable
+          onPress={() => onNavigate?.(place)}
           style={({ pressed }) => [
             styles.navButton,
             { opacity: pressed ? 0.8 : 1 },
