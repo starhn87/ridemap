@@ -5,6 +5,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { router } from 'expo-router';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -156,7 +157,7 @@ export default function ProfileScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200).duration(300)} style={styles.menu}>
-        <MenuItem icon="⭐" label="즐겨찾기" onPress={() => {}} />
+        <MenuItem icon="⭐" label="즐겨찾기" onPress={() => router.push('/favorites')} />
         <MenuItem icon="📝" label="내 제보 목록" onPress={() => {}} />
         <MenuItem icon="💬" label="내 리뷰" onPress={() => {}} />
         <MenuItem

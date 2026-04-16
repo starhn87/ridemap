@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 
@@ -6,6 +6,8 @@ import Colors from '@/constants/Colors';
 import { CATEGORIES } from '@/constants/categories';
 import { useColorScheme } from '@/components/useColorScheme';
 import { openNavigation } from '@/lib/navigation';
+import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
+import { useAuthStore } from '@/stores/useAuthStore';
 import ReviewList from '@/components/review/ReviewList';
 import ReviewForm from '@/components/review/ReviewForm';
 import type { Place } from '@/types';
@@ -21,6 +23,22 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
   const colors = Colors[colorScheme ?? 'light'];
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['30%', '75%'], []);
+  const user = useAuthStore((s) => s.user);
+  const isFavorite = useIsFavorite(place?.id ?? '');
+  const { mutateAsync: toggleFav } = useToggleFavorite();
+
+  const handleFavorite = useCallback(async () => {
+    if (!user) {
+      Alert.alert('알림', '로그인이 필요합니다.');
+      return;
+    }
+    if (!place) return;
+    try {
+      await toggleFav(place.id);
+    } catch (error: any) {
+      Alert.alert('오류', error.message ?? '즐겨찾기 처리에 실패했습니다.');
+    }
+  }, [user, place, toggleFav]);
 
   useEffect(() => {
     if (place) {
@@ -88,7 +106,12 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
           </View>
         </View>
 
-        <Text style={[styles.name, { color: colors.text }]}>{place.name}</Text>
+        <View style={styles.nameRow}>
+          <Text style={[styles.name, { color: colors.text }]}>{place.name}</Text>
+          <Pressable onPress={handleFavorite} style={styles.favoriteButton}>
+            <Text style={{ fontSize: 22 }}>{isFavorite ? '❤️' : '🤍'}</Text>
+          </Pressable>
+        </View>
         <Text style={[styles.address, { color: colors.textSecondary }]}>
           {place.address}
         </Text>
@@ -229,10 +252,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 2,
   },
+  nameRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   name: {
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 4,
+    flex: 1,
+  },
+  favoriteButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   address: {
     fontSize: 14,

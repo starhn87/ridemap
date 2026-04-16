@@ -59,6 +59,7 @@ function RootLayoutNav() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="favorites" options={{ title: '즐겨찾기' }} />
           </Stack>
         </ThemeProvider>
       </QueryClientProvider>
