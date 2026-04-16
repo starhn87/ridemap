@@ -3,14 +3,14 @@ import { StyleSheet, View, Text } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
-export default function MapScreen() {
+export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.placeholder, { color: colors.textSecondary }]}>
-        🗺️ Mapbox 지도가 여기에 표시됩니다
+        마이페이지
       </Text>
     </View>
   );
