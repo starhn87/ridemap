@@ -1,7 +1,7 @@
 import { StyleSheet, View, Pressable, Text, Alert } from 'react-native';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import Mapbox from '@rnmapbox/maps';
-import type { MapView } from '@rnmapbox/maps';
+import { NaverMapView } from '@mj-studio/react-native-naver-map';
+import type { NaverMapViewRef } from '@mj-studio/react-native-naver-map';
 import * as Location from 'expo-location';
 import Animated, {
   useAnimatedStyle,
@@ -10,11 +10,10 @@ import Animated, {
   FadeIn,
 } from 'react-native-reanimated';
 
-import '@/lib/mapbox';
-import { MAP_STYLE, DEFAULT_CENTER, DEFAULT_ZOOM } from '@/constants/mapStyle';
+import { DEFAULT_CENTER, DEFAULT_ZOOM } from '@/constants/mapStyle';
 import { MOCK_PLACES } from '@/constants/mockPlaces';
 import { useMapStore } from '@/stores/useMapStore';
-import { useNearbyPlaces } from '@/hooks/usePlaces';
+import { usePlaces } from '@/hooks/usePlaces';
 import { fetchRoute } from '@/lib/api/directions';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -40,13 +39,12 @@ export default function MapScreen() {
   } = useMapStore();
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [mapReady, setMapReady] = useState(false);
   const [route, setRoute] = useState<Route | null>(null);
   const [routePlace, setRoutePlace] = useState<Place | null>(null);
   const [navigating, setNavigating] = useState(false);
-  const cameraRef = useRef<Mapbox.Camera>(null);
+  const mapRef = useRef<NaverMapViewRef>(null);
 
-  const { data: supabasePlaces } = useNearbyPlaces(activeFilter);
+  const { data: supabasePlaces } = usePlaces(activeFilter);
 
   useEffect(() => {
     (async () => {
@@ -61,11 +59,7 @@ export default function MapScreen() {
     })();
   }, [setUserLocation]);
 
-  const filteredPlaces = supabasePlaces?.length
-    ? supabasePlaces
-    : activeFilter
-      ? MOCK_PLACES.filter((p) => p.category === activeFilter)
-      : MOCK_PLACES;
+  const places = supabasePlaces ?? MOCK_PLACES;
 
   const handleMarkerPress = useCallback(
     (place: Place) => {
@@ -104,10 +98,13 @@ export default function MapScreen() {
         if (result.geometry.length > 0) {
           const lngs = result.geometry.map((c) => c[0]);
           const lats = result.geometry.map((c) => c[1]);
-          const ne: [number, number] = [Math.max(...lngs), Math.max(...lats)];
-          const sw: [number, number] = [Math.min(...lngs), Math.min(...lats)];
 
-          cameraRef.current?.fitBounds(ne, sw, [80, 80, 200, 80], 1000);
+          mapRef.current?.animateCameraTo({
+            latitude: (Math.max(...lats) + Math.min(...lats)) / 2,
+            longitude: (Math.max(...lngs) + Math.min(...lngs)) / 2,
+            zoom: 10,
+            duration: 1000,
+          });
         }
       } catch (error: any) {
         Alert.alert('경로 오류', error.message ?? '경로를 찾을 수 없습니다.');
@@ -132,54 +129,45 @@ export default function MapScreen() {
       myLocationScale.value = withSpring(1);
     });
     if (userLocation) {
-      cameraRef.current?.setCamera({
-        centerCoordinate: [userLocation.longitude, userLocation.latitude],
-        zoomLevel: 14,
-        animationDuration: 800,
+      mapRef.current?.animateCameraTo({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        zoom: 14,
+        duration: 800,
       });
     }
   };
 
-  const centerCoord = userLocation
-    ? [userLocation.longitude, userLocation.latitude]
-    : DEFAULT_CENTER;
+  const initialCamera = {
+    latitude: userLocation?.latitude ?? DEFAULT_CENTER[1],
+    longitude: userLocation?.longitude ?? DEFAULT_CENTER[0],
+    zoom: DEFAULT_ZOOM,
+  };
 
   return (
     <View style={styles.container}>
-      <Mapbox.MapView
+      <NaverMapView
+        ref={mapRef}
         style={styles.map}
-        styleURL={colorScheme === 'dark' ? MAP_STYLE.dark : MAP_STYLE.light}
-        logoEnabled={false}
-        attributionEnabled={false}
-        compassEnabled
-        compassPosition={{ top: 100, right: 16 }}
-        onDidFinishLoadingMap={() => setMapReady(true)}>
-        <Mapbox.Camera
-          ref={cameraRef}
-          zoomLevel={DEFAULT_ZOOM}
-          centerCoordinate={centerCoord as [number, number]}
-          animationMode="flyTo"
-          animationDuration={1000}
-        />
-
-        <Mapbox.LocationPuck
-          puckBearing="heading"
-          puckBearingEnabled
-          visible
-        />
-
-        {mapReady &&
-          filteredPlaces.map((place) => (
-            <PlaceMarker
-              key={place.id}
-              place={place}
-              isSelected={selectedPlaceId === place.id}
-              onPress={() => handleMarkerPress(place)}
-            />
-          ))}
+        mapType="Basic"
+        isNightModeEnabled={colorScheme === 'dark'}
+        isShowLocationButton={false}
+        isShowCompass
+        isShowScaleBar={false}
+        isShowZoomControls={false}
+        initialCamera={initialCamera}
+        locale="ko">
+        {places.map((place) => (
+          <PlaceMarker
+            key={place.id}
+            place={place}
+            isSelected={selectedPlaceId === place.id}
+            onPress={() => handleMarkerPress(place)}
+          />
+        ))}
 
         {route && <RouteLine route={route} />}
-      </Mapbox.MapView>
+      </NaverMapView>
 
       {!navigating && (
         <Animated.View

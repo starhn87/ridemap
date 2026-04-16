@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import Mapbox from '@rnmapbox/maps';
+import { NaverMapMarkerOverlay } from '@mj-studio/react-native-naver-map';
 
 import { CATEGORIES } from '@/constants/categories';
 import type { Place } from '@/types';
@@ -14,11 +14,15 @@ export default function PlaceMarker({ place, isSelected, onPress }: Props) {
   const category = CATEGORIES[place.category];
 
   return (
-    <Mapbox.PointAnnotation
-      id={place.id}
-      coordinate={[place.longitude, place.latitude]}
-      onSelected={onPress}>
+    <NaverMapMarkerOverlay
+      latitude={place.latitude}
+      longitude={place.longitude}
+      onTap={onPress}
+      anchor={{ x: 0.5, y: 1 }}
+      width={44}
+      height={44}>
       <View
+        collapsable={false}
         style={[
           styles.marker,
           {
@@ -30,7 +34,7 @@ export default function PlaceMarker({ place, isSelected, onPress }: Props) {
         ]}>
         <Text style={styles.markerIcon}>{category.icon}</Text>
       </View>
-    </Mapbox.PointAnnotation>
+    </NaverMapMarkerOverlay>
   );
 }
 

@@ -1,42 +1,22 @@
-import Mapbox from '@rnmapbox/maps';
+import { NaverMapPathOverlay } from '@mj-studio/react-native-naver-map';
 import type { Route } from '@/lib/api/directions';
 
 export default function RouteLine({ route }: { route: Route }) {
-  const routeGeoJSON: GeoJSON.FeatureCollection = {
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: route.geometry,
-        },
-      },
-    ],
-  };
+  const coords = route.geometry.map(([lng, lat]) => ({
+    latitude: lat,
+    longitude: lng,
+  }));
+
+  if (coords.length < 2) return null;
 
   return (
-    <Mapbox.ShapeSource id="route-source" shape={routeGeoJSON}>
-      <Mapbox.LineLayer
-        id="route-line-bg"
-        style={{
-          lineColor: '#F97316',
-          lineWidth: 8,
-          lineOpacity: 0.3,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }}
-      />
-      <Mapbox.LineLayer
-        id="route-line"
-        style={{
-          lineColor: '#F97316',
-          lineWidth: 4,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }}
-      />
-    </Mapbox.ShapeSource>
+    <NaverMapPathOverlay
+      coords={coords}
+      width={6}
+      color="#F97316"
+      outlineWidth={2}
+      outlineColor="#FFFFFF"
+      passedColor="#FDBA74"
+    />
   );
 }

@@ -27,8 +27,8 @@ function rowToPlace(row: any): Place {
     name: row.name,
     description: row.description ?? '',
     category: row.category,
-    latitude: row.lat,
-    longitude: row.lng,
+    latitude: row.latitude,
+    longitude: row.longitude,
     address: row.address,
     phone: row.phone,
     photos: row.photos ?? [],
@@ -58,42 +58,19 @@ export async function fetchNearbyPlaces({
 
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => {
-    // PostGIS geography → lat/lng 추출
-    const point = row.location;
-    let lat = latitude;
-    let lng = longitude;
-
-    if (point && typeof point === 'object') {
-      // GeoJSON format: { type: "Point", coordinates: [lng, lat] }
-      lng = point.coordinates[0];
-      lat = point.coordinates[1];
-    }
-
-    return rowToPlace({ ...row, lat, lng });
-  });
+  return (data ?? []).map(rowToPlace);
 }
 
-export async function fetchAllPlaces(): Promise<Place[]> {
-  const { data, error } = await supabase
-    .from('places')
-    .select('*')
-    .eq('approved', true)
-    .order('created_at', { ascending: false });
+export async function fetchAllPlaces(
+  category?: PlaceCategory | null
+): Promise<Place[]> {
+  const { data, error } = await supabase.rpc('all_places', {
+    category_filter: category ?? null,
+  });
 
   if (error) throw error;
 
-  return (data ?? []).map((row: any) => {
-    let lat = 0;
-    let lng = 0;
-
-    if (row.location && typeof row.location === 'object') {
-      lng = row.location.coordinates[0];
-      lat = row.location.coordinates[1];
-    }
-
-    return rowToPlace({ ...row, lat, lng });
-  });
+  return (data ?? []).map(rowToPlace);
 }
 
 export async function submitPlace(params: SubmitPlaceParams): Promise<void> {
