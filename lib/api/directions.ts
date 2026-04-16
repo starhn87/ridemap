@@ -30,7 +30,7 @@ export async function fetchRoute(
   const data = await res.json();
 
   if (data.code !== 0 || !data.route?.trafast?.length) {
-    throw new Error(data.message ?? '경로를 찾을 수 없습니다.');
+    throw new Error(data.message ?? data?.error?.message ?? '경로를 찾을 수 없습니다.');
   }
 
   const route = data.route.trafast[0];

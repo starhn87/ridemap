@@ -1,25 +1,26 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 
 import Colors from '@/constants/Colors';
 import { CATEGORIES } from '@/constants/categories';
 import { useColorScheme } from '@/components/useColorScheme';
 import { openNavigation } from '@/lib/navigation';
+import ReviewList from '@/components/review/ReviewList';
+import ReviewForm from '@/components/review/ReviewForm';
 import type { Place } from '@/types';
 
 interface Props {
   place: Place | null;
   onClose: () => void;
-  onNavigate?: (place: Place) => void;
   onRoutePreview?: (place: Place) => void;
 }
 
-export default function PlaceBottomSheet({ place, onClose, onNavigate, onRoutePreview }: Props) {
+export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Props) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['30%', '60%'], []);
+  const snapPoints = useMemo(() => ['30%', '75%'], []);
 
   useEffect(() => {
     if (place) {
@@ -62,7 +63,9 @@ export default function PlaceBottomSheet({ place, onClose, onNavigate, onRoutePr
         backgroundColor: colors.tabIconDefault,
         width: 40,
       }}>
-      <BottomSheetView style={styles.content}>
+      <BottomSheetScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View
             style={[
@@ -168,7 +171,17 @@ export default function PlaceBottomSheet({ place, onClose, onNavigate, onRoutePr
             <Text style={styles.navButtonText}>네비 시작</Text>
           </Pressable>
         </View>
-      </BottomSheetView>
+
+        {/* 리뷰 섹션 */}
+        <View style={[styles.reviewSection, { borderTopColor: colors.border }]}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            리뷰
+          </Text>
+          <ReviewForm placeId={place.id} />
+          <View style={styles.reviewDivider} />
+          <ReviewList placeId={place.id} />
+        </View>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 }
@@ -176,6 +189,7 @@ export default function PlaceBottomSheet({ place, onClose, onNavigate, onRoutePr
 const styles = StyleSheet.create({
   content: {
     padding: 20,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
@@ -264,6 +278,7 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     gap: 10,
+    marginBottom: 8,
   },
   routePreviewButton: {
     flex: 1,
@@ -286,5 +301,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  reviewSection: {
+    borderTopWidth: 1,
+    paddingTop: 20,
+    marginTop: 12,
+  },
+  reviewSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  reviewDivider: {
+    height: 16,
   },
 });
