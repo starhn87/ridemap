@@ -1,6 +1,9 @@
 import { StyleSheet, View, Pressable, Text, Alert } from 'react-native';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { NaverMapView } from '@mj-studio/react-native-naver-map';
+import {
+  NaverMapView,
+  NaverMapMarkerOverlay,
+} from '@mj-studio/react-native-naver-map';
 import type { NaverMapViewRef } from '@mj-studio/react-native-naver-map';
 import * as Location from 'expo-location';
 import Animated, {
@@ -42,21 +45,50 @@ export default function MapScreen() {
   const [route, setRoute] = useState<Route | null>(null);
   const [routePlace, setRoutePlace] = useState<Place | null>(null);
   const [navigating, setNavigating] = useState(false);
+  const [heading, setHeading] = useState<number>(0);
   const mapRef = useRef<NaverMapViewRef>(null);
 
   const { data: supabasePlaces } = usePlaces(activeFilter);
 
   useEffect(() => {
+    let locationSub: Location.LocationSubscription | null = null;
+    let headingSub: Location.LocationSubscription | null = null;
+
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
 
+      // 초기 위치
       const location = await Location.getCurrentPositionAsync({});
       setUserLocation({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
+
+      // 실시간 위치 추적
+      locationSub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          distanceInterval: 10,
+        },
+        (loc) => {
+          setUserLocation({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+        }
+      );
+
+      // 방향(heading) 추적
+      headingSub = await Location.watchHeadingAsync((h) => {
+        setHeading(h.trueHeading);
+      });
     })();
+
+    return () => {
+      locationSub?.remove();
+      headingSub?.remove();
+    };
   }, [setUserLocation]);
 
   const places = supabasePlaces ?? MOCK_PLACES;
@@ -75,7 +107,7 @@ export default function MapScreen() {
     setSelectedPlace(null);
   }, [setSelectedPlaceId]);
 
-  const handleNavigate = useCallback(
+  const handleRoutePreview = useCallback(
     async (place: Place) => {
       if (!userLocation) {
         Alert.alert('알림', '현재 위치를 확인할 수 없습니다.');
@@ -156,7 +188,26 @@ export default function MapScreen() {
         isShowScaleBar={false}
         isShowZoomControls={false}
         initialCamera={initialCamera}
-        locale="ko">
+        locale="ko"
+        isExtentBoundedInKorea>
+        {userLocation && (
+          <NaverMapMarkerOverlay
+            latitude={userLocation.latitude}
+            longitude={userLocation.longitude}
+            anchor={{ x: 0.5, y: 0.5 }}
+            width={44}
+            height={44}
+            angle={heading}
+            isFlatEnabled>
+            <View collapsable={false} style={styles.userLocationContainer}>
+              <View style={styles.userLocationArrow} />
+              <View style={styles.userLocationMarker}>
+                <View style={styles.userLocationDot} />
+              </View>
+            </View>
+          </NaverMapMarkerOverlay>
+        )}
+
         {places.map((place) => (
           <PlaceMarker
             key={place.id}
@@ -188,14 +239,18 @@ export default function MapScreen() {
             bottom: navigating ? 200 : 120,
           },
         ]}>
-        <Text style={styles.myLocationIcon}>📍</Text>
+        <View style={styles.myLocationIconContainer}>
+          <View style={[styles.myLocationCrosshair, { borderColor: colors.tint }]}>
+            <View style={[styles.myLocationCenter, { backgroundColor: colors.tint }]} />
+          </View>
+        </View>
       </AnimatedPressable>
 
       {!navigating && (
         <PlaceBottomSheet
           place={selectedPlace}
           onClose={handleBottomSheetClose}
-          onNavigate={handleNavigate}
+          onRoutePreview={handleRoutePreview}
         />
       )}
 
@@ -232,7 +287,61 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  myLocationIcon: {
-    fontSize: 20,
+  myLocationIconContainer: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  myLocationCrosshair: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  myLocationCenter: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  userLocationContainer: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userLocationArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderBottomWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'rgba(247, 115, 22, 0.5)',
+    marginBottom: -3,
+  },
+  userLocationMarker: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(247, 115, 22, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userLocationDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#F97316',
+    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });

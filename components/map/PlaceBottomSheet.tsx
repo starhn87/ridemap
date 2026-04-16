@@ -12,9 +12,10 @@ interface Props {
   place: Place | null;
   onClose: () => void;
   onNavigate?: (place: Place) => void;
+  onRoutePreview?: (place: Place) => void;
 }
 
-export default function PlaceBottomSheet({ place, onClose, onNavigate }: Props) {
+export default function PlaceBottomSheet({ place, onClose, onNavigate, onRoutePreview }: Props) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -140,7 +141,7 @@ export default function PlaceBottomSheet({ place, onClose, onNavigate }: Props) 
 
         <View style={styles.buttonRow}>
           <Pressable
-            onPress={() => onNavigate?.(place)}
+            onPress={() => onRoutePreview?.(place)}
             style={({ pressed }) => [
               styles.routePreviewButton,
               {
