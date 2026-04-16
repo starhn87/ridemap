@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef, useEffect } from 'react';
 import Colors from '@/constants/Colors';
 import { CATEGORIES } from '@/constants/categories';
 import { useColorScheme } from '@/components/useColorScheme';
+import { openNavigation } from '@/lib/navigation';
 import type { Place } from '@/types';
 
 interface Props {
@@ -137,14 +138,35 @@ export default function PlaceBottomSheet({ place, onClose, onNavigate }: Props) 
           </View>
         )}
 
-        <Pressable
-          onPress={() => onNavigate?.(place)}
-          style={({ pressed }) => [
-            styles.navButton,
-            { opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={styles.navButtonText}>경로 안내</Text>
-        </Pressable>
+        <View style={styles.buttonRow}>
+          <Pressable
+            onPress={() => onNavigate?.(place)}
+            style={({ pressed }) => [
+              styles.routePreviewButton,
+              {
+                backgroundColor: colorScheme === 'dark' ? '#2A2A2A' : '#F3F4F6',
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}>
+            <Text style={[styles.routePreviewText, { color: colors.text }]}>
+              경로 미리보기
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              openNavigation({
+                name: place.name,
+                latitude: place.latitude,
+                longitude: place.longitude,
+              })
+            }
+            style={({ pressed }) => [
+              styles.navButton,
+              { opacity: pressed ? 0.8 : 1 },
+            ]}>
+            <Text style={styles.navButtonText}>네비 시작</Text>
+          </Pressable>
+        </View>
       </BottomSheetView>
     </BottomSheet>
   );
@@ -238,7 +260,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  routePreviewButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  routePreviewText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   navButton: {
+    flex: 1,
     backgroundColor: '#F97316',
     paddingVertical: 14,
     borderRadius: 12,
@@ -246,7 +283,7 @@ const styles = StyleSheet.create({
   },
   navButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
   },
 });

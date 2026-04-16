@@ -42,6 +42,7 @@ export default function MapScreen() {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [route, setRoute] = useState<Route | null>(null);
+  const [routePlace, setRoutePlace] = useState<Place | null>(null);
   const [navigating, setNavigating] = useState(false);
   const cameraRef = useRef<Mapbox.Camera>(null);
 
@@ -94,6 +95,7 @@ export default function MapScreen() {
         );
 
         setRoute(result);
+        setRoutePlace(place);
         setNavigating(true);
         setSelectedPlace(null);
         setSelectedPlaceId(null);
@@ -116,6 +118,7 @@ export default function MapScreen() {
 
   const handleRouteClose = useCallback(() => {
     setRoute(null);
+    setRoutePlace(null);
     setNavigating(false);
   }, []);
 
@@ -208,8 +211,8 @@ export default function MapScreen() {
         />
       )}
 
-      {navigating && route && (
-        <RouteInfoCard route={route} onClose={handleRouteClose} />
+      {navigating && route && routePlace && (
+        <RouteInfoCard route={route} place={routePlace} onClose={handleRouteClose} />
       )}
     </View>
   );

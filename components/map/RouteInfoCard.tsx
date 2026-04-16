@@ -4,14 +4,17 @@ import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { formatDistance, formatDuration } from '@/lib/api/directions';
+import { openNavigation } from '@/lib/navigation';
 import type { Route } from '@/lib/api/directions';
+import type { Place } from '@/types';
 
 interface Props {
   route: Route;
+  place: Place;
   onClose: () => void;
 }
 
-export default function RouteInfoCard({ route, onClose }: Props) {
+export default function RouteInfoCard({ route, place, onClose }: Props) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -59,11 +62,18 @@ export default function RouteInfoCard({ route, onClose }: Props) {
           <Text style={[styles.cancelText, { color: colors.text }]}>취소</Text>
         </Pressable>
         <Pressable
+          onPress={() =>
+            openNavigation({
+              name: place.name,
+              latitude: place.latitude,
+              longitude: place.longitude,
+            })
+          }
           style={({ pressed }) => [
             styles.startButton,
             { opacity: pressed ? 0.8 : 1 },
           ]}>
-          <Text style={styles.startText}>출발</Text>
+          <Text style={styles.startText}>네비 시작</Text>
         </Pressable>
       </View>
     </Animated.View>
