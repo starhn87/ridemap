@@ -95,15 +95,17 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
               {category.label}
             </Text>
           </View>
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingStar}>★</Text>
-            <Text style={[styles.ratingText, { color: colors.text }]}>
-              {place.rating}
-            </Text>
-            <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
-              ({place.reviewCount})
-            </Text>
-          </View>
+          {place.rating > 0 && (
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingStar}>★</Text>
+              <Text style={[styles.ratingText, { color: colors.text }]}>
+                {place.rating}
+              </Text>
+              <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
+                ({place.reviewCount})
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.nameRow}>

@@ -1,0 +1,42 @@
+import { supabase } from '@/lib/supabase';
+import type { Review } from '@/types';
+
+export async function fetchCourseReviews(courseId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('course_reviews')
+    .select('*')
+    .eq('course_id', courseId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    placeId: row.course_id,
+    userId: row.user_id,
+    userName: row.user_name,
+    rating: row.rating,
+    content: row.content ?? '',
+    photos: [],
+    createdAt: row.created_at,
+  }));
+}
+
+export async function createCourseReview(params: {
+  courseId: string;
+  rating: number;
+  content: string;
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('로그인이 필요합니다.');
+
+  const { error } = await supabase.from('course_reviews').insert({
+    course_id: params.courseId,
+    user_id: user.id,
+    user_name: user.user_metadata?.name ?? user.email ?? '익명 라이더',
+    rating: params.rating,
+    content: params.content,
+  });
+
+  if (error) throw error;
+}

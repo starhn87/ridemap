@@ -2,24 +2,51 @@ import {
   StyleSheet,
   View,
   Text,
+  TextInput,
   Pressable,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { NaverMapView, NaverMapPathOverlay } from '@mj-studio/react-native-naver-map';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { useCourse } from '@/hooks/useCourses';
+import { useCourseReviews, useCreateCourseReview } from '@/hooks/useCourseReviews';
 import { openNavigation } from '@/lib/navigation';
 import { DIFFICULTY_CONFIG, formatDistance, formatDuration } from '@/constants/course';
+import StarRating from '@/components/review/StarRating';
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const user = useAuthStore((s) => s.user);
   const { data: course, isLoading } = useCourse(id ?? null);
+  const { data: reviews } = useCourseReviews(id ?? null);
+  const { mutateAsync: submitReview, isPending } = useCreateCourseReview();
+  const [rating, setRating] = useState(0);
+  const [content, setContent] = useState('');
+
+  const handleSubmitReview = async () => {
+    if (!id) return;
+    if (rating === 0) {
+      Alert.alert('알림', '별점을 선택해주세요.');
+      return;
+    }
+    try {
+      await submitReview({ courseId: id, rating, content: content.trim() });
+      setRating(0);
+      setContent('');
+      Alert.alert('완료', '리뷰가 등록되었습니다.');
+    } catch (error: any) {
+      Alert.alert('오류', error.message ?? '리뷰 등록에 실패했습니다.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -146,6 +173,93 @@ export default function CourseDetailScreen() {
             <Text style={styles.navButtonText}>이 코스로 네비 시작</Text>
           </Pressable>
         )}
+
+        {/* 리뷰 섹션 */}
+        <View style={[styles.reviewSection, { borderTopColor: colors.border }]}>
+          <Text style={[styles.reviewSectionTitle, { color: colors.text }]}>
+            리뷰
+          </Text>
+
+          {user ? (
+            <View style={styles.reviewForm}>
+              <Text style={[styles.reviewFormLabel, { color: colors.text }]}>별점</Text>
+              <StarRating rating={rating} onRate={setRating} size={32} />
+              <TextInput
+                style={[
+                  styles.reviewInput,
+                  {
+                    backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+                    color: colors.text,
+                    borderColor: colors.border,
+                  },
+                ]}
+                placeholder="리뷰를 작성해주세요 (선택)"
+                placeholderTextColor={colors.textSecondary}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                numberOfLines={3}
+              />
+              <Pressable
+                onPress={handleSubmitReview}
+                disabled={isPending}
+                style={({ pressed }) => [
+                  styles.reviewSubmitButton,
+                  { opacity: isPending || pressed ? 0.6 : 1 },
+                ]}>
+                <Text style={styles.reviewSubmitText}>
+                  {isPending ? '등록 중...' : '리뷰 등록'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text style={[styles.loginHint, { color: colors.textSecondary }]}>
+              리뷰를 작성하려면 로그인이 필요합니다.
+            </Text>
+          )}
+
+          {!reviews?.length ? (
+            <Text style={[styles.emptyReview, { color: colors.textSecondary }]}>
+              아직 리뷰가 없습니다. 첫 리뷰를 남겨보세요!
+            </Text>
+          ) : (
+            <View style={styles.reviewList}>
+              {reviews.map((review) => (
+                <View
+                  key={review.id}
+                  style={[
+                    styles.reviewItem,
+                    {
+                      backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+                      borderColor: colors.border,
+                    },
+                  ]}>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.reviewUser}>
+                      <View style={styles.reviewAvatar}>
+                        <Text style={styles.reviewAvatarText}>
+                          {review.userName.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                      <Text style={[styles.reviewUserName, { color: colors.text }]}>
+                        {review.userName}
+                      </Text>
+                    </View>
+                    <StarRating rating={review.rating} size={14} readonly />
+                  </View>
+                  {review.content ? (
+                    <Text style={[styles.reviewContent, { color: colors.text }]}>
+                      {review.content}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
+                    {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
     </ScrollView>
   );
@@ -248,5 +362,98 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+  },
+  reviewSection: {
+    borderTopWidth: 1,
+    paddingTop: 20,
+    marginTop: 24,
+  },
+  reviewSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  reviewForm: {
+    gap: 12,
+    marginBottom: 20,
+  },
+  reviewFormLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  reviewInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    minHeight: 70,
+    textAlignVertical: 'top',
+  },
+  reviewSubmitButton: {
+    backgroundColor: '#F97316',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  reviewSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  loginHint: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  emptyReview: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginVertical: 16,
+  },
+  reviewList: {
+    gap: 10,
+    marginTop: 8,
+  },
+  reviewItem: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  reviewUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F97316',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  reviewUserName: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reviewContent: {
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 6,
+  },
+  reviewDate: {
+    fontSize: 11,
   },
 });
