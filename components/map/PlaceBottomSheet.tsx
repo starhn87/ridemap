@@ -23,7 +23,7 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['30%', '75%'], []);
+  const snapPoints = useMemo(() => ['38%', '75%'], []);
   const user = useAuthStore((s) => s.user);
   const { data: latestPlace } = usePlace(place?.id ?? null);
   const displayPlace = latestPlace ?? place;

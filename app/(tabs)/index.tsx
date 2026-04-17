@@ -206,7 +206,13 @@ export default function MapScreen() {
         initialCamera={initialCamera}
         locale="ko"
         isExtentBoundedInKorea
-        onTapMap={() => Keyboard.dismiss()}
+        onTapMap={() => {
+          Keyboard.dismiss();
+          if (selectedPlace) {
+            setSelectedPlaceId(null);
+            setSelectedPlace(null);
+          }
+        }}
         onCameraChanged={(e) => {
           if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current);
           cameraTimerRef.current = setTimeout(() => {
