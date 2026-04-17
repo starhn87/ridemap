@@ -20,10 +20,10 @@ const NAV_APPS: NavApp[] = [
       `kakaomap://route?ep=${latitude},${longitude}&by=CAR&ename=${encodeURIComponent(name)}`,
   },
   {
-    label: 'T맵',
+    label: 'T맵 (이륜차)',
     scheme: 'tmap://',
     buildUrl: ({ name, latitude, longitude }) =>
-      `tmap://route?goalname=${encodeURIComponent(name)}&goaly=${latitude}&goalx=${longitude}`,
+      `tmap://route?goalname=${encodeURIComponent(name)}&goaly=${latitude}&goalx=${longitude}&carType=8`,
   },
   {
     label: '네이버지도',
