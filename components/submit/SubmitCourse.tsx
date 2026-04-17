@@ -20,14 +20,9 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { submitCourse } from '@/lib/api/courses';
 import { geocodeAddress } from '@/lib/geocode';
+import { DIFFICULTY_OPTIONS } from '@/constants/course';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-const DIFFICULTY_OPTIONS = [
-  { key: 'easy' as const, label: '초급', color: '#22C55E' },
-  { key: 'medium' as const, label: '중급', color: '#F97316' },
-  { key: 'hard' as const, label: '상급', color: '#EF4444' },
-];
 
 interface Waypoint {
   id: string;

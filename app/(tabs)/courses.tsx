@@ -13,9 +13,10 @@ import { router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCourses } from '@/hooks/useCourses';
+import { DIFFICULTY_CONFIG, formatDistance, formatDuration } from '@/constants/course';
 import type { RidingCourse } from '@/types';
 
-const DIFFICULTY_OPTIONS = [
+const FILTER_OPTIONS = [
   { key: null, label: '전체' },
   { key: 'easy', label: '초급', color: '#22C55E' },
   { key: 'medium', label: '중급', color: '#F97316' },
@@ -27,29 +28,13 @@ function DifficultyBadge({
 }: {
   difficulty: 'easy' | 'medium' | 'hard';
 }) {
-  const config = {
-    easy: { label: '초급', color: '#22C55E' },
-    medium: { label: '중급', color: '#F97316' },
-    hard: { label: '상급', color: '#EF4444' },
-  };
-  const { label, color } = config[difficulty];
+  const { label, color } = DIFFICULTY_CONFIG[difficulty];
 
   return (
     <View style={[styles.difficultyBadge, { backgroundColor: color + '20' }]}>
       <Text style={[styles.difficultyText, { color }]}>{label}</Text>
     </View>
   );
-}
-
-function formatDistance(km: number): string {
-  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
-}
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0) return `${h}시간 ${m}분`;
-  return `${m}분`;
 }
 
 export default function CoursesScreen() {
@@ -121,7 +106,7 @@ export default function CoursesScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}>
-          {DIFFICULTY_OPTIONS.map((opt) => (
+          {FILTER_OPTIONS.map((opt) => (
           <Pressable
             key={opt.label}
             onPress={() => setDifficulty(opt.key)}

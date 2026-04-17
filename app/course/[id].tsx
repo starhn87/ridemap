@@ -13,23 +13,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useCourse } from '@/hooks/useCourses';
 import { openNavigation } from '@/lib/navigation';
-
-function formatDistance(km: number): string {
-  return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
-}
-
-function formatDuration(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h > 0) return `${h}시간 ${m}분`;
-  return `${m}분`;
-}
-
-const DIFFICULTY_CONFIG = {
-  easy: { label: '초급', color: '#22C55E' },
-  medium: { label: '중급', color: '#F97316' },
-  hard: { label: '상급', color: '#EF4444' },
-};
+import { DIFFICULTY_CONFIG, formatDistance, formatDuration } from '@/constants/course';
 
 export default function CourseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
