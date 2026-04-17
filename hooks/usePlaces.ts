@@ -30,5 +30,6 @@ export function usePlaces(category?: PlaceCategory | null, center?: MapCenter | 
             category,
           })
         : fetchAllPlaces(category),
+    placeholderData: (prev) => prev,
   });
 }
