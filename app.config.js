@@ -19,7 +19,7 @@ export default {
         NSLocationWhenInUseUsageDescription:
           '라이딩 중 현재 위치를 표시하고 주변 장소를 찾기 위해 위치 정보가 필요합니다.',
       },
-      bundleIdentifier: 'com.anonymous.ridemap',
+      bundleIdentifier: 'com.ridemap.app',
     },
     android: {
       adaptiveIcon: {
