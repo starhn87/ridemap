@@ -1,0 +1,135 @@
+import {
+  StyleSheet,
+  View,
+  Text,
+  Pressable,
+} from 'react-native';
+
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { useThemeStore } from '@/stores/useThemeStore';
+
+type ThemeMode = 'system' | 'light' | 'dark';
+
+function ThemeOption({
+  label,
+  value,
+  current,
+  onPress,
+}: {
+  label: string;
+  value: ThemeMode;
+  current: ThemeMode;
+  onPress: (v: ThemeMode) => void;
+}) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const isActive = current === value;
+
+  return (
+    <Pressable
+      onPress={() => onPress(value)}
+      style={[
+        styles.themeOption,
+        {
+          backgroundColor: isActive
+            ? '#F97316'
+            : colorScheme === 'dark'
+              ? '#1A1A1A'
+              : '#F3F4F6',
+          borderColor: isActive ? '#F97316' : colors.border,
+        },
+      ]}>
+      <Text
+        style={[
+          styles.themeLabel,
+          { color: isActive ? '#FFFFFF' : colors.text },
+        ]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+export default function SettingsScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const { mode, setMode } = useThemeStore();
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+        테마
+      </Text>
+      <View style={styles.themeRow}>
+        <ThemeOption label="시스템" value="system" current={mode} onPress={setMode} />
+        <ThemeOption label="라이트" value="light" current={mode} onPress={setMode} />
+        <ThemeOption label="다크" value="dark" current={mode} onPress={setMode} />
+      </View>
+
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+        앱 정보
+      </Text>
+      <View
+        style={[
+          styles.infoCard,
+          {
+            backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+            borderColor: colors.border,
+          },
+        ]}>
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>버전</Text>
+          <Text style={[styles.infoValue, { color: colors.text }]}>1.0.0</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 10,
+    marginTop: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 32,
+  },
+  themeOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  themeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  infoCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  infoLabel: {
+    fontSize: 14,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

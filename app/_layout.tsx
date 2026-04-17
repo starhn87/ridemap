@@ -59,7 +59,10 @@ function RootLayoutNav() {
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ title: '설정', headerBackTitle: '뒤로' }} />
             <Stack.Screen name="favorites" options={{ title: '즐겨찾기', headerBackTitle: '뒤로' }} />
+            <Stack.Screen name="my-submissions" options={{ title: '내 제보 목록', headerBackTitle: '뒤로' }} />
+            <Stack.Screen name="my-reviews" options={{ title: '내 리뷰', headerBackTitle: '뒤로' }} />
             <Stack.Screen name="course/[id]" options={{ title: '코스 상세', headerBackTitle: '뒤로' }} />
           </Stack>
         </ThemeProvider>
