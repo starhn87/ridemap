@@ -7,12 +7,13 @@ WebBrowser.maybeCompleteAuthSession();
 
 const redirectUri = makeRedirectUri({ scheme: 'ridemap' });
 
-async function signInWithProvider(provider: Provider) {
+async function signInWithProvider(provider: Provider, scopes?: string) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: redirectUri,
       skipBrowserRedirect: true,
+      ...(scopes ? { scopes } : {}),
     },
   });
 
@@ -35,7 +36,22 @@ async function signInWithProvider(provider: Provider) {
   }
 }
 
-export const signInWithKakao = () => signInWithProvider('kakao');
-export const signInWithApple = () => signInWithProvider('apple');
+export async function signInWithEmail(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  if (error) throw error;
+}
+
+export const signInWithKakao = () => signInWithProvider('kakao', 'profile_nickname profile_image');
 export const signInWithGoogle = () => signInWithProvider('google');
 export const signInWithNaver = () => signInWithProvider('naver' as Provider);

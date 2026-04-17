@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: 'ridemap',
+    name: 'RideMap',
     slug: 'ridemap',
     version: '1.0.0',
     orientation: 'portrait',
