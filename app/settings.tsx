@@ -3,6 +3,7 @@ import {
   View,
   Text,
   Pressable,
+  Linking,
 } from 'react-native';
 
 import Colors from '@/constants/Colors';
@@ -83,6 +84,19 @@ export default function SettingsScreen() {
           <Text style={[styles.infoValue, { color: colors.text }]}>1.0.0</Text>
         </View>
       </View>
+
+      <Pressable
+        onPress={() => Linking.openURL('https://realman.notion.site/RideMap-34520de7c8198070909bf4ab9813ee98')}
+        style={[
+          styles.linkButton,
+          {
+            backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+            borderColor: colors.border,
+          },
+        ]}>
+        <Text style={[styles.linkText, { color: colors.text }]}>개인정보처리방침</Text>
+        <Text style={[styles.linkArrow, { color: colors.textSecondary }]}>›</Text>
+      </Pressable>
     </View>
   );
 }
@@ -130,6 +144,23 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  linkButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  linkText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  linkArrow: {
+    fontSize: 18,
     fontWeight: '600',
   },
 });
