@@ -48,3 +48,29 @@ export async function fetchCourseById(id: string): Promise<RidingCourse> {
 
   return rowToCourse(data);
 }
+
+export async function submitCourse(params: {
+  name: string;
+  description: string;
+  distance: number;
+  duration: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  coordinates: [number, number][];
+  tags?: string[];
+}): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('로그인이 필요합니다.');
+
+  const { error } = await supabase.from('courses').insert({
+    name: params.name,
+    description: params.description,
+    distance: params.distance,
+    duration: params.duration,
+    difficulty: params.difficulty,
+    coordinates: params.coordinates,
+    tags: params.tags ?? [],
+    created_by: user.id,
+  });
+
+  if (error) throw error;
+}

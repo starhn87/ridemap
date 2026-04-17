@@ -23,14 +23,57 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { CATEGORY_LIST } from '@/constants/categories';
 import { submitPlace } from '@/lib/api/places';
 import LoginPrompt from '@/components/auth/LoginPrompt';
+import SubmitCourse from '@/components/submit/SubmitCourse';
+import SubmitFeedback from '@/components/submit/SubmitFeedback';
 import type { PlaceCategory } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function SubmitScreen() {
+type SubmitType = 'place' | 'course' | 'feedback';
+
+function SubmitTypeTab({
+  type,
+  current,
+  onPress,
+}: {
+  type: SubmitType;
+  current: SubmitType;
+  onPress: (t: SubmitType) => void;
+}) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const user = useAuthStore((s) => s.user);
+  const isActive = current === type;
+  const labels: Record<SubmitType, string> = {
+    place: '장소',
+    course: '코스',
+    feedback: '건의',
+  };
+  const label = labels[type];
+
+  return (
+    <Pressable
+      onPress={() => onPress(type)}
+      style={[
+        styles.tab,
+        {
+          backgroundColor: isActive ? '#F97316' : 'transparent',
+          borderColor: isActive ? '#F97316' : colors.border,
+        },
+      ]}>
+      <Text
+        style={[
+          styles.tabLabel,
+          { color: isActive ? '#FFFFFF' : colors.textSecondary },
+        ]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function SubmitPlace() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -47,10 +90,6 @@ export default function SubmitScreen() {
   const submitStyle = useAnimatedStyle(() => ({
     transform: [{ scale: submitScale.value }],
   }));
-
-  if (!user) {
-    return <LoginPrompt message="장소를 제보하려면 로그인이 필요합니다." />;
-  }
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -90,19 +129,13 @@ export default function SubmitScreen() {
         longitude,
         address: address.trim(),
         phone: phone.trim() || undefined,
-        tags: tags
-          .split(',')
-          .map((t) => t.trim())
-          .filter(Boolean),
+        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
         openingHours: openingHours.trim() || undefined,
         parkingInfo: parkingInfo.trim() || undefined,
       });
 
-      Alert.alert('제보 완료', '관리자 승인 후 지도에 표시됩니다.', [
-        { text: '확인' },
-      ]);
+      Alert.alert('제보 완료', '관리자 승인 후 지도에 표시됩니다.');
 
-      // 폼 초기화
       setName('');
       setDescription('');
       setCategory(null);
@@ -119,17 +152,24 @@ export default function SubmitScreen() {
     }
   };
 
+  const inputStyle = [
+    styles.input,
+    {
+      backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+      color: colors.text,
+      borderColor: colors.border,
+    },
+  ];
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
+        style={{ flex: 1 }}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          카테고리 *
-        </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>카테고리 *</Text>
         <View style={styles.categories}>
           {CATEGORY_LIST.map((cat) => (
             <Pressable
@@ -138,213 +178,99 @@ export default function SubmitScreen() {
               style={[
                 styles.categoryChip,
                 {
-                  backgroundColor:
-                    category === cat.key
-                      ? cat.color
-                      : colorScheme === 'dark'
-                        ? '#1A1A1A'
-                        : '#F3F4F6',
+                  backgroundColor: category === cat.key ? cat.color : colorScheme === 'dark' ? '#1A1A1A' : '#F3F4F6',
                   borderColor: category === cat.key ? cat.color : colors.border,
                 },
               ]}>
               <Text style={styles.categoryIcon}>{cat.icon}</Text>
-              <Text
-                style={[
-                  styles.categoryLabel,
-                  { color: category === cat.key ? '#FFFFFF' : colors.text },
-                ]}>
+              <Text style={[styles.categoryLabel, { color: category === cat.key ? '#FFFFFF' : colors.text }]}>
                 {cat.label}
               </Text>
             </Pressable>
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          장소명 *
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="예: 라이더스 카페"
-          placeholderTextColor={colors.textSecondary}
-          value={name}
-          onChangeText={setName}
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>장소명 *</Text>
+        <TextInput style={inputStyle} placeholder="예: 라이더스 카페" placeholderTextColor={colors.textSecondary} value={name} onChangeText={setName} />
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          주소 *
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="예: 서울 성동구 성수동 123"
-          placeholderTextColor={colors.textSecondary}
-          value={address}
-          onChangeText={setAddress}
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>주소 *</Text>
+        <TextInput style={inputStyle} placeholder="예: 서울 성동구 성수동 123" placeholderTextColor={colors.textSecondary} value={address} onChangeText={setAddress} />
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>설명</Text>
-        <TextInput
-          style={[
-            styles.input,
-            styles.multiline,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="이 장소에 대해 알려주세요"
-          placeholderTextColor={colors.textSecondary}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={3}
-        />
+        <TextInput style={[...inputStyle, styles.multiline]} placeholder="이 장소에 대해 알려주세요" placeholderTextColor={colors.textSecondary} value={description} onChangeText={setDescription} multiline numberOfLines={3} />
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          태그
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="쉼표로 구분 (예: 넓은주차장, 헬멧보관)"
-          placeholderTextColor={colors.textSecondary}
-          value={tags}
-          onChangeText={setTags}
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>태그</Text>
+        <TextInput style={inputStyle} placeholder="쉼표로 구분 (예: 넓은주차장, 헬멧보관)" placeholderTextColor={colors.textSecondary} value={tags} onChangeText={setTags} />
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          전화번호
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="02-1234-5678"
-          placeholderTextColor={colors.textSecondary}
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>전화번호</Text>
+        <TextInput style={inputStyle} placeholder="02-1234-5678" placeholderTextColor={colors.textSecondary} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          영업시간
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="09:00 - 22:00"
-          placeholderTextColor={colors.textSecondary}
-          value={openingHours}
-          onChangeText={setOpeningHours}
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>영업시간</Text>
+        <TextInput style={inputStyle} placeholder="09:00 - 22:00" placeholderTextColor={colors.textSecondary} value={openingHours} onChangeText={setOpeningHours} />
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          주차 정보
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="바이크 전용 주차 20대"
-          placeholderTextColor={colors.textSecondary}
-          value={parkingInfo}
-          onChangeText={setParkingInfo}
-        />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>주차 정보</Text>
+        <TextInput style={inputStyle} placeholder="바이크 전용 주차 20대" placeholderTextColor={colors.textSecondary} value={parkingInfo} onChangeText={setParkingInfo} />
 
-        <Pressable
-          onPress={() => setUseCurrentLocation(!useCurrentLocation)}
-          style={styles.checkboxRow}>
-          <View
-            style={[
-              styles.checkbox,
-              {
-                backgroundColor: useCurrentLocation
-                  ? '#F97316'
-                  : 'transparent',
-                borderColor: useCurrentLocation ? '#F97316' : colors.border,
-              },
-            ]}>
-            {useCurrentLocation && (
-              <Text style={styles.checkmark}>✓</Text>
-            )}
+        <Pressable onPress={() => setUseCurrentLocation(!useCurrentLocation)} style={styles.checkboxRow}>
+          <View style={[styles.checkbox, { backgroundColor: useCurrentLocation ? '#F97316' : 'transparent', borderColor: useCurrentLocation ? '#F97316' : colors.border }]}>
+            {useCurrentLocation && <Text style={styles.checkmark}>✓</Text>}
           </View>
-          <Text style={[styles.checkboxLabel, { color: colors.text }]}>
-            현재 위치 사용
-          </Text>
+          <Text style={[styles.checkboxLabel, { color: colors.text }]}>현재 위치 사용</Text>
         </Pressable>
 
-        <AnimatedPressable
-          onPress={handleSubmit}
-          disabled={submitting}
-          style={[
-            styles.submitButton,
-            submitStyle,
-            { opacity: submitting ? 0.6 : 1 },
-          ]}>
-          <Text style={styles.submitText}>
-            {submitting ? '제보 중...' : '장소 제보하기'}
-          </Text>
+        <AnimatedPressable onPress={handleSubmit} disabled={submitting} style={[styles.submitButton, submitStyle, { opacity: submitting ? 0.6 : 1 }]}>
+          <Text style={styles.submitText}>{submitting ? '제보 중...' : '장소 제보하기'}</Text>
         </AnimatedPressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+export default function SubmitScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const user = useAuthStore((s) => s.user);
+  const [submitType, setSubmitType] = useState<SubmitType>('place');
+
+  if (!user) {
+    return <LoginPrompt message="제보하려면 로그인이 필요합니다." />;
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.tabRow}>
+        <SubmitTypeTab type="place" current={submitType} onPress={setSubmitType} />
+        <SubmitTypeTab type="course" current={submitType} onPress={setSubmitType} />
+        <SubmitTypeTab type="feedback" current={submitType} onPress={setSubmitType} />
+      </View>
+
+      {submitType === 'place' && <SubmitPlace />}
+      {submitType === 'course' && <SubmitCourse />}
+      {submitType === 'feedback' && <SubmitFeedback />}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  categories: {
+  container: { flex: 1 },
+  tabRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
   },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  tabLabel: { fontSize: 14, fontWeight: '700' },
+  content: { padding: 20, paddingBottom: 40 },
+  sectionTitle: { fontSize: 14, fontWeight: '600', marginTop: 16, marginBottom: 8 },
+  categories: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,58 +279,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
   },
-  categoryIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  categoryLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-  },
-  multiline: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    gap: 10,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  submitButton: {
-    backgroundColor: '#F97316',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  submitText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  categoryIcon: { fontSize: 14, marginRight: 4 },
+  categoryLabel: { fontSize: 13, fontWeight: '600' },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
+  multiline: { minHeight: 80, textAlignVertical: 'top' },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 10 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  checkboxLabel: { fontSize: 14, fontWeight: '500' },
+  submitButton: { backgroundColor: '#F97316', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 24 },
+  submitText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
 });
