@@ -14,7 +14,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from '@/constants/mapStyle';
-import { MOCK_PLACES } from '@/constants/mockPlaces';
 import { useMapStore } from '@/stores/useMapStore';
 import { usePlaces } from '@/hooks/usePlaces';
 import { fetchRoute } from '@/lib/api/directions';
@@ -94,7 +93,7 @@ export default function MapScreen() {
     };
   }, [setUserLocation]);
 
-  const places = supabasePlaces ?? MOCK_PLACES;
+  const places = supabasePlaces ?? [];
 
   const handleMarkerPress = useCallback(
     (place: Place) => {
