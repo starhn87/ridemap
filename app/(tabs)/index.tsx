@@ -1,4 +1,4 @@
-import { StyleSheet, View, Pressable, Text, Alert } from 'react-native';
+import { StyleSheet, View, Pressable, Text, Alert, Keyboard } from 'react-native';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   NaverMapView,
@@ -25,6 +25,7 @@ import PlaceMarker from '@/components/map/PlaceMarker';
 import PlaceBottomSheet from '@/components/map/PlaceBottomSheet';
 import RouteLine from '@/components/map/RouteLine';
 import RouteInfoCard from '@/components/map/RouteInfoCard';
+import SearchBar from '@/components/search/SearchBar';
 import type { Place } from '@/types';
 import type { Route } from '@/lib/api/directions';
 
@@ -46,9 +47,11 @@ export default function MapScreen() {
   const [routePlace, setRoutePlace] = useState<Place | null>(null);
   const [navigating, setNavigating] = useState(false);
   const [heading, setHeading] = useState<number>(0);
+  const [mapCenter, setMapCenter] = useState<{ latitude: number; longitude: number; zoom: number } | null>(null);
   const mapRef = useRef<NaverMapViewRef>(null);
+  const cameraTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: supabasePlaces } = usePlaces(activeFilter);
+  const { data: supabasePlaces } = usePlaces(activeFilter, mapCenter);
 
   useEffect(() => {
     let locationSub: Location.LocationSubscription | null = null;
@@ -100,6 +103,20 @@ export default function MapScreen() {
       setSelectedPlace(place);
     },
     [setSelectedPlaceId, navigating]
+  );
+
+  const handleSearchSelect = useCallback(
+    (place: Place) => {
+      setSelectedPlaceId(place.id);
+      setSelectedPlace(place);
+      mapRef.current?.animateCameraTo({
+        latitude: place.latitude,
+        longitude: place.longitude,
+        zoom: 15,
+        duration: 800,
+      });
+    },
+    [setSelectedPlaceId]
   );
 
   const handleBottomSheetClose = useCallback(() => {
@@ -189,7 +206,18 @@ export default function MapScreen() {
         isShowZoomControls={false}
         initialCamera={initialCamera}
         locale="ko"
-        isExtentBoundedInKorea>
+        isExtentBoundedInKorea
+        onTapMap={() => Keyboard.dismiss()}
+        onCameraChanged={(e) => {
+          if (cameraTimerRef.current) clearTimeout(cameraTimerRef.current);
+          cameraTimerRef.current = setTimeout(() => {
+            setMapCenter({
+              latitude: e.latitude,
+              longitude: e.longitude,
+              zoom: e.zoom ?? 12,
+            });
+          }, 500);
+        }}>
         {userLocation && (
           <NaverMapMarkerOverlay
             latitude={userLocation.latitude}
@@ -223,8 +251,9 @@ export default function MapScreen() {
       {!navigating && (
         <Animated.View
           entering={FadeIn.duration(300)}
-          style={[styles.filterContainer, { top: 60 }]}>
+          style={styles.searchAndFilter}>
           <CategoryFilter />
+          <SearchBar onSelectPlace={handleSearchSelect} />
         </Animated.View>
       )}
 
@@ -268,11 +297,13 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
-  filterContainer: {
+  searchAndFilter: {
     position: 'absolute',
+    top: 60,
     left: 0,
     right: 0,
     zIndex: 10,
+    gap: 8,
   },
   myLocationButton: {
     position: 'absolute',
