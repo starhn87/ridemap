@@ -40,3 +40,21 @@ export async function createCourseReview(params: {
 
   if (error) throw error;
 }
+
+export async function updateCourseReview(params: {
+  id: string;
+  rating: number;
+  content: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('course_reviews')
+    .update({ rating: params.rating, content: params.content })
+    .eq('id', params.id);
+
+  if (error) throw error;
+}
+
+export async function deleteCourseReview(id: string): Promise<void> {
+  const { error } = await supabase.from('course_reviews').delete().eq('id', id);
+  if (error) throw error;
+}

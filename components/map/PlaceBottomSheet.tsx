@@ -8,6 +8,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { openNavigation } from '@/lib/navigation';
 import { useIsFavorite, useToggleFavorite } from '@/hooks/useFavorites';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { usePlace } from '@/hooks/usePlace';
 import ReviewList from '@/components/review/ReviewList';
 import ReviewForm from '@/components/review/ReviewForm';
 import type { Place } from '@/types';
@@ -24,6 +25,8 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['30%', '75%'], []);
   const user = useAuthStore((s) => s.user);
+  const { data: latestPlace } = usePlace(place?.id ?? null);
+  const displayPlace = latestPlace ?? place;
   const isFavorite = useIsFavorite(place?.id ?? '');
   const { mutateAsync: toggleFav } = useToggleFavorite();
 
@@ -57,9 +60,9 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
     [onClose]
   );
 
-  if (!place) return null;
+  if (!place || !displayPlace) return null;
 
-  const category = CATEGORIES[place.category];
+  const category = CATEGORIES[displayPlace.category];
 
   return (
     <BottomSheet
@@ -95,35 +98,35 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
               {category.label}
             </Text>
           </View>
-          {place.rating > 0 && (
+          {displayPlace.rating > 0 && (
             <View style={styles.ratingContainer}>
               <Text style={styles.ratingStar}>★</Text>
               <Text style={[styles.ratingText, { color: colors.text }]}>
-                {place.rating}
+                {displayPlace.rating}
               </Text>
               <Text style={[styles.reviewCount, { color: colors.textSecondary }]}>
-                ({place.reviewCount})
+                ({displayPlace.reviewCount})
               </Text>
             </View>
           )}
         </View>
 
         <View style={styles.nameRow}>
-          <Text style={[styles.name, { color: colors.text }]}>{place.name}</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{displayPlace.name}</Text>
           <Pressable onPress={handleFavorite} style={styles.favoriteButton}>
             <Text style={{ fontSize: 22 }}>{isFavorite ? '❤️' : '🤍'}</Text>
           </Pressable>
         </View>
         <Text style={[styles.address, { color: colors.textSecondary }]}>
-          {place.address}
+          {displayPlace.address}
         </Text>
         <Text style={[styles.description, { color: colors.textSecondary }]}>
-          {place.description}
+          {displayPlace.description}
         </Text>
 
-        {place.tags.length > 0 && (
+        {displayPlace.tags.length > 0 && (
           <View style={styles.tags}>
-            {place.tags.map((tag) => (
+            {displayPlace.tags.map((tag) => (
               <View
                 key={tag}
                 style={[
@@ -141,26 +144,26 @@ export default function PlaceBottomSheet({ place, onClose, onRoutePreview }: Pro
           </View>
         )}
 
-        {(place.openingHours || place.parkingInfo) && (
+        {(displayPlace.openingHours || displayPlace.parkingInfo) && (
           <View
             style={[styles.infoSection, { borderTopColor: colors.border }]}>
-            {place.openingHours && (
+            {displayPlace.openingHours && (
               <View style={styles.infoRow}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
                   영업시간
                 </Text>
                 <Text style={[styles.infoValue, { color: colors.text }]}>
-                  {place.openingHours}
+                  {displayPlace.openingHours}
                 </Text>
               </View>
             )}
-            {place.parkingInfo && (
+            {displayPlace.parkingInfo && (
               <View style={styles.infoRow}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
                   주차
                 </Text>
                 <Text style={[styles.infoValue, { color: colors.text }]}>
-                  {place.parkingInfo}
+                  {displayPlace.parkingInfo}
                 </Text>
               </View>
             )}

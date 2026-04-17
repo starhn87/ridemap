@@ -16,7 +16,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useCourse } from '@/hooks/useCourses';
-import { useCourseReviews, useCreateCourseReview } from '@/hooks/useCourseReviews';
+import { useCourseReviews, useCreateCourseReview, useUpdateCourseReview, useDeleteCourseReview } from '@/hooks/useCourseReviews';
 import { openNavigation } from '@/lib/navigation';
 import { DIFFICULTY_CONFIG, formatDistance, formatDuration } from '@/constants/course';
 import StarRating from '@/components/review/StarRating';
@@ -29,8 +29,13 @@ export default function CourseDetailScreen() {
   const { data: course, isLoading } = useCourse(id ?? null);
   const { data: reviews } = useCourseReviews(id ?? null);
   const { mutateAsync: submitReview, isPending } = useCreateCourseReview();
+  const { mutateAsync: updateReview } = useUpdateCourseReview(id ?? '');
+  const { mutateAsync: removeReview } = useDeleteCourseReview(id ?? '');
   const [rating, setRating] = useState(0);
   const [content, setContent] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editContent, setEditContent] = useState('');
 
   const handleSubmitReview = async () => {
     if (!id) return;
@@ -224,39 +229,102 @@ export default function CourseDetailScreen() {
             </Text>
           ) : (
             <View style={styles.reviewList}>
-              {reviews.map((review) => (
-                <View
-                  key={review.id}
-                  style={[
-                    styles.reviewItem,
-                    {
-                      backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
-                      borderColor: colors.border,
-                    },
-                  ]}>
-                  <View style={styles.reviewHeader}>
-                    <View style={styles.reviewUser}>
-                      <View style={styles.reviewAvatar}>
-                        <Text style={styles.reviewAvatarText}>
-                          {review.userName.charAt(0).toUpperCase()}
+              {reviews.map((review) => {
+                const isOwner = user?.id === review.userId;
+                const isEditing = editingId === review.id;
+
+                return (
+                  <View
+                    key={review.id}
+                    style={[
+                      styles.reviewItem,
+                      {
+                        backgroundColor: colorScheme === 'dark' ? '#1A1A1A' : '#F9FAFB',
+                        borderColor: colors.border,
+                      },
+                    ]}>
+                    <View style={styles.reviewHeader}>
+                      <View style={styles.reviewUser}>
+                        <View style={styles.reviewAvatar}>
+                          <Text style={styles.reviewAvatarText}>
+                            {review.userName.charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <Text style={[styles.reviewUserName, { color: colors.text }]}>
+                          {review.userName}
                         </Text>
                       </View>
-                      <Text style={[styles.reviewUserName, { color: colors.text }]}>
-                        {review.userName}
-                      </Text>
+                      {!isEditing && <StarRating rating={review.rating} size={14} readonly />}
                     </View>
-                    <StarRating rating={review.rating} size={14} readonly />
+
+                    {isEditing ? (
+                      <View style={styles.editForm}>
+                        <StarRating rating={editRating} onRate={setEditRating} size={24} />
+                        <TextInput
+                          style={[
+                            styles.editInput,
+                            {
+                              backgroundColor: colorScheme === 'dark' ? '#0F0F0F' : '#FFFFFF',
+                              color: colors.text,
+                              borderColor: colors.border,
+                            },
+                          ]}
+                          value={editContent}
+                          onChangeText={setEditContent}
+                          multiline
+                          numberOfLines={2}
+                        />
+                        <View style={styles.editButtons}>
+                          <Pressable
+                            onPress={() => { setEditingId(null); }}
+                            style={styles.cancelEditButton}>
+                            <Text style={[styles.cancelEditText, { color: colors.textSecondary }]}>취소</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={async () => {
+                              if (editRating === 0) { Alert.alert('알림', '별점을 선택해주세요.'); return; }
+                              try {
+                                await updateReview({ id: review.id, rating: editRating, content: editContent.trim() });
+                                setEditingId(null);
+                              } catch (e: any) { Alert.alert('오류', e.message ?? '수정 실패'); }
+                            }}
+                            style={styles.saveEditButton}>
+                            <Text style={styles.saveEditText}>저장</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ) : (
+                      <>
+                        {review.content ? (
+                          <Text style={[styles.reviewContent, { color: colors.text }]}>
+                            {review.content}
+                          </Text>
+                        ) : null}
+                        <View style={styles.reviewFooter}>
+                          <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
+                            {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                          </Text>
+                          {isOwner && (
+                            <View style={styles.reviewActions}>
+                              <Pressable onPress={() => { setEditingId(review.id); setEditRating(review.rating); setEditContent(review.content); }}>
+                                <Text style={[styles.actionText, { color: colors.tint }]}>수정</Text>
+                              </Pressable>
+                              <Pressable onPress={() => {
+                                Alert.alert('리뷰 삭제', '정말 삭제하시겠습니까?', [
+                                  { text: '취소', style: 'cancel' },
+                                  { text: '삭제', style: 'destructive', onPress: () => removeReview(review.id) },
+                                ]);
+                              }}>
+                                <Text style={[styles.actionText, { color: '#EF4444' }]}>삭제</Text>
+                              </Pressable>
+                            </View>
+                          )}
+                        </View>
+                      </>
+                    )}
                   </View>
-                  {review.content ? (
-                    <Text style={[styles.reviewContent, { color: colors.text }]}>
-                      {review.content}
-                    </Text>
-                  ) : null}
-                  <Text style={[styles.reviewDate, { color: colors.textSecondary }]}>
-                    {new Date(review.createdAt).toLocaleDateString('ko-KR')}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
         </View>
@@ -455,5 +523,55 @@ const styles = StyleSheet.create({
   },
   reviewDate: {
     fontSize: 11,
+  },
+  reviewFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reviewActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  editForm: {
+    gap: 10,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 13,
+    minHeight: 50,
+    textAlignVertical: 'top',
+  },
+  editButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  cancelEditButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  cancelEditText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  saveEditButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F97316',
+  },
+  saveEditText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
